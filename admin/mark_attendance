@@ -1,0 +1,99 @@
+<?php 
+session_start();
+// Database Connection
+include('includes/config.php');
+
+// Validating Session
+if(strlen($_SESSION['aid'])==0) {
+  header('location:index.php');
+} else {
+  // Check if form is submitted
+  if(isset($_POST['submit'])) {
+    $attendance_date = $_POST['attendance_date']; // Get selected date
+
+    // Loop through each student's attendance status
+    foreach($_POST['status'] as $ID => $status) {
+      // Check if attendance already exists for this student and date
+      $check_query = mysqli_query($con, "SELECT * FROM tblattendence WHERE ID = '$ID' AND attendance_date = '$attendance_date'");
+      
+      if(mysqli_num_rows($check_query) > 0) {
+        // Update existing attendance record
+        mysqli_query($con, "UPDATE tblattendence SET status = '$status' WHERE ID = '$ID' AND attendance_date = '$attendance_date'");
+      } else {
+        // Insert new attendance record
+        mysqli_query($con, "INSERT INTO tblattendence (ID, attendance_date, status) VALUES ('$ID', '$attendance_date', '$status')");
+      }
+    }
+    echo "<script>alert('Attendance has been marked successfully!');</script>";
+  }
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mark Attendance</title>
+  <!-- Link to your CSS files and any necessary JS files (e.g., for datepicker) -->
+</head>
+<body>
+<div class="wrapper">
+  <?php include_once('includes/navbar.php'); ?>
+  <?php include_once('includes/sidebar.php'); ?>
+
+  <!-- Main Content -->
+  <div class="content-wrapper">
+    <section class="content">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Mark Attendance</h3>
+              </div>
+              <div class="card-body">
+                <form method="POST" action="">
+                  <div class="form-group">
+                    <label for="attendance_date">Select Date</label>
+                    <input type="date" name="attendance_date" id="attendance_date" class="form-control" required>
+                  </div>
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Attendance Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php
+                      // Fetch accepted students from tblenrollment
+                      $query = mysqli_query($con, "SELECT ID FROM tblenrollment WHERE Status = 'Accepted'");
+                      while($row = mysqli_fetch_array($query)) {
+                        echo "<tr>";
+                        echo "<td>" . $row['ID'] . "</td>";
+                        echo "<td>";
+                        echo "<select name='status[" . $row['ID'] . "]' class='form-control'>";
+                        echo "<option value='Present'>Present</option>";
+                        echo "<option value='Absent'>Absent</option>";
+                        echo "</select>";
+                        echo "</td>";
+                        echo "</tr>";
+                      }
+                      ?>
+                    </tbody>
+                  </table>
+                  <button type="submit" name="submit" class="btn btn-primary">Submit Attendance</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <?php include_once('includes/footer.php'); ?>
+</div>
+</body>
+</html>
+<?php } ?>
